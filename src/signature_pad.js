@@ -1,6 +1,8 @@
 import Point from './point';
 import Bezier from './bezier';
 
+var log = console.log.bind(console);
+
 function SignaturePad(canvas, options) {
   const self = this;
   const opts = options || {};
@@ -8,6 +10,7 @@ function SignaturePad(canvas, options) {
   this.velocityFilterWeight = opts.velocityFilterWeight || 0.7;
   this.minWidth = opts.minWidth || 0.5;
   this.maxWidth = opts.maxWidth || 2.5;
+  this.throttle = opts.throttle || 0;
   this.dotSize = opts.dotSize || function () {
     return (this.minWidth + this.maxWidth) / 2;
   };
@@ -15,6 +18,7 @@ function SignaturePad(canvas, options) {
   this.backgroundColor = opts.backgroundColor || 'rgba(0,0,0,0)';
   this.onBegin = opts.onBegin;
   this.onEnd = opts.onEnd;
+  this.lastUpdateTimeStamp = null;
 
   this._canvas = canvas;
   this._ctx = canvas.getContext('2d');
@@ -31,7 +35,7 @@ function SignaturePad(canvas, options) {
 
   this._handleMouseMove = function (event) {
     if (self._mouseButtonDown) {
-      self._strokeUpdate(event);
+      self._strokeUpdate(event, true);
     }
   };
 
@@ -54,7 +58,7 @@ function SignaturePad(canvas, options) {
     event.preventDefault();
 
     const touch = event.targetTouches[0];
-    self._strokeUpdate(touch);
+    self._strokeUpdate(touch, true);
   };
 
   this._handleTouchEnd = function (event) {
@@ -136,9 +140,20 @@ SignaturePad.prototype._strokeBegin = function (event) {
   }
 };
 
-SignaturePad.prototype._strokeUpdate = function (event) {
+SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   const x = event.clientX;
   const y = event.clientY;
+
+  var diff;
+  if (isStrokeMove && this.throttle) { // are we are throttling ?
+    diff = event.timeStamp - this.lastUpdateTimeStamp;
+    if (diff <= this.throttle) {
+      log('throttling skipped: ' + x + ' ' + y);
+      log('diff: ' + diff);
+      return; // skip this update
+    }
+  }
+  this.lastUpdateTimeStamp = event.timeStamp; // update
 
   const point = this._createPoint(x, y);
   const { curve, widths } = this._addPoint(point);
@@ -263,7 +278,7 @@ SignaturePad.prototype._calculateCurveWidths = function (curve) {
   const widths = { start: null, end: null };
 
   const velocity = (this.velocityFilterWeight * endPoint.velocityFrom(startPoint))
-   + ((1 - this.velocityFilterWeight) * this._lastVelocity);
+    + ((1 - this.velocityFilterWeight) * this._lastVelocity);
 
   const newWidth = this._strokeWidth(velocity);
 
@@ -384,13 +399,13 @@ SignaturePad.prototype._toSVG = function () {
       // lines on the canvas that are not continuous. E.g. Sharp corners
       // or stopping mid-stroke and than continuing without lifting mouse.
       if (!isNaN(curve.control1.x) &&
-          !isNaN(curve.control1.y) &&
-          !isNaN(curve.control2.x) &&
-          !isNaN(curve.control2.y)) {
+        !isNaN(curve.control1.y) &&
+        !isNaN(curve.control2.x) &&
+        !isNaN(curve.control2.y)) {
         const attr = `M ${curve.startPoint.x.toFixed(3)},${curve.startPoint.y.toFixed(3)} `
-                   + `C ${curve.control1.x.toFixed(3)},${curve.control1.y.toFixed(3)} `
-                   + `${curve.control2.x.toFixed(3)},${curve.control2.y.toFixed(3)} `
-                   + `${curve.endPoint.x.toFixed(3)},${curve.endPoint.y.toFixed(3)}`;
+          + `C ${curve.control1.x.toFixed(3)},${curve.control1.y.toFixed(3)} `
+          + `${curve.control2.x.toFixed(3)},${curve.control2.y.toFixed(3)} `
+          + `${curve.endPoint.x.toFixed(3)},${curve.endPoint.y.toFixed(3)}`;
 
         path.setAttribute('d', attr);
         path.setAttributeNS(null, 'stroke-width', (widths.end * 2.25).toFixed(3));

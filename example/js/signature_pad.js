@@ -1,5 +1,5 @@
 /*!
- * Signature Pad v1.6.0-beta.5
+ * Signature Pad v1.6.0-beta.6
  * https://github.com/szimek/signature_pad
  *
  * Copyright 2017 Szymon Nowak
@@ -21,8 +21,6 @@
 	typeof define === 'function' && define.amd ? define(factory) :
 	(global.SignaturePad = factory());
 }(this, (function () { 'use strict';
-
-var log = console.log.bind(console);
 
 function Point(x, y, time) {
   this.x = x;
@@ -72,6 +70,8 @@ Bezier.prototype.length = function () {
 Bezier.prototype._point = function (t, start, c1, c2, end) {
   return start * (1.0 - t) * (1.0 - t) * (1.0 - t) + 3.0 * c1 * (1.0 - t) * (1.0 - t) * t + 3.0 * c2 * (1.0 - t) * t * t + end * t * t * t;
 };
+
+var log = console.log.bind(console);
 
 function SignaturePad(canvas, options) {
   var self = this;
@@ -209,7 +209,6 @@ SignaturePad.prototype.isEmpty = function () {
 
 // Private methods
 SignaturePad.prototype._strokeBegin = function (event) {
-
   this._data.push([]);
   this._reset();
   this._strokeUpdate(event);
@@ -224,10 +223,13 @@ SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   var y = event.clientY;
 
   var diff;
-  if(isStrokeMove && this.throttle){ // if we are throttling
+  if (isStrokeMove && this.throttle) {
+    // are we are throttling ?
     diff = event.timeStamp - this.lastUpdateTimeStamp;
-    if(diff <= this.throttle){
-      return;
+    if (diff <= this.throttle) {
+      log('throttling skipped: ' + x + ' ' + y);
+      log('diff: ' + diff);
+      return; // skip this update
     }
   }
   this.lastUpdateTimeStamp = event.timeStamp; // update
