@@ -4,7 +4,9 @@ module.exports = {
   "env": {
     "browser": true
   },
-
+  "parserOptions": {
+        "ecmaVersion": 5,
+  },
   "rules": {
     "no-underscore-dangle": "off",
     "func-names": "off",

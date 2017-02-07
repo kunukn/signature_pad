@@ -148,11 +148,11 @@ SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   if (isStrokeMove && this.throttle) { // are we are throttling ?
     diff = event.timeStamp - this.lastUpdateTimeStamp;
     if (diff <= this.throttle) {
-      log('throttling skipped: ' + x + ' ' + y);
-      log('diff: ' + diff);
+      log('point skipped: '+x+' '+y);
       return; // skip this update
     }
   }
+  log('point used: '+x+' '+y);
   this.lastUpdateTimeStamp = event.timeStamp; // update
 
   const point = this._createPoint(x, y);
