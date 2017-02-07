@@ -5,7 +5,7 @@ module.exports = {
     "browser": true
   },
   "parserOptions": {
-        "ecmaVersion": 5,
+    //"ecmaVersion": 5,
   },
   "rules": {
     "no-underscore-dangle": "off",

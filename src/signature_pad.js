@@ -1,8 +1,9 @@
 import Point from './point';
 import Bezier from './bezier';
 
-var log = console.log.bind(console);
-log = function nop(){};
+/* eslint no-console: ["error", { allow: ["debug", "warn", "log", "error"] }] */
+let log = console.log.bind(console);
+log = function nop() { };
 
 function SignaturePad(canvas, options) {
   const self = this;
@@ -144,17 +145,15 @@ SignaturePad.prototype._strokeBegin = function (event) {
 SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   const x = event.clientX;
   const y = event.clientY;
-
-  var diff;
-  var now = Date.now(); // milliseconds
-  if (isStrokeMove && this.throttle) { // are we are throttling ?
-    diff = now - this.lastUpdateTimeStamp;
+  const now = Date.now(); // milliseconds
+  if (isStrokeMove && this.throttle) { // are we throttling ?
+    const diff = now - this.lastUpdateTimeStamp;
     if (diff <= this.throttle) {
-      log('point skipped: '+x+' '+y);
+      log(`point skipped: ${x} ${y}`);
       return; // skip this update
     }
   }
-  log('point used: '+x+' '+y);
+  log(`point used: ${x} ${y}`);
   this.lastUpdateTimeStamp = now; // update
 
   const point = this._createPoint(x, y);
@@ -304,6 +303,48 @@ SignaturePad.prototype._drawPoint = function (x, y, size) {
   ctx.arc(x, y, size, 0, 2 * Math.PI, false);
   this._isEmpty = false;
 };
+
+
+// Debug
+SignaturePad.prototype.drawDataAsPoints = function (size, fill) {
+  const ctx = this._ctx;
+  ctx.save();
+
+  const length = this._data.length;
+  let i;
+  let j;
+  let x;
+  let y;
+
+  if (length) {
+    for (i = 0; i < length; i += 1) {
+      for (j = 0; j < this._data[i].length; j += 1) {
+        const point = this._data[i][j];
+        x = point.x;
+        y = point.y;
+        ctx.moveTo(x, y);
+        ctx.arc(x, y, (size || 5), 0, 2 * Math.PI, false);
+        ctx.fillStyle = fill || 'rgba(255, 0, 0, 0.2)';
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.restore();
+};
+
+
+
+SignaturePad.prototype._drawMark = function (x, y, size, fill) {
+  const ctx = this._ctx;
+  ctx.save();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, (size || 5), 0, 2 * Math.PI, false);
+  ctx.fillStyle = fill || 'rgba(255, 0, 0, 0.2)';
+  ctx.fill();
+  ctx.restore();
+};
+
 
 SignaturePad.prototype._drawCurve = function (curve, startWidth, endWidth) {
   const ctx = this._ctx;

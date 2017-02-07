@@ -71,8 +71,9 @@ Bezier.prototype._point = function (t, start, c1, c2, end) {
   return start * (1.0 - t) * (1.0 - t) * (1.0 - t) + 3.0 * c1 * (1.0 - t) * (1.0 - t) * t + 3.0 * c2 * (1.0 - t) * t * t + end * t * t * t;
 };
 
+/* eslint no-console: ["error", { allow: ["debug", "warn", "log", "error"] }] */
 var log = console.log.bind(console);
-log = function nop(){};
+log = function nop() {};
 
 function SignaturePad(canvas, options) {
   var self = this;
@@ -222,12 +223,10 @@ SignaturePad.prototype._strokeBegin = function (event) {
 SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   var x = event.clientX;
   var y = event.clientY;
-
-  var diff;
   var now = Date.now(); // milliseconds
   if (isStrokeMove && this.throttle) {
-    // are we are throttling ?
-    diff = now - this.lastUpdateTimeStamp;
+    // are we throttling ?
+    var diff = now - this.lastUpdateTimeStamp;
     if (diff <= this.throttle) {
       log('point skipped: ' + x + ' ' + y);
       return; // skip this update
@@ -380,6 +379,44 @@ SignaturePad.prototype._drawPoint = function (x, y, size) {
   ctx.moveTo(x, y);
   ctx.arc(x, y, size, 0, 2 * Math.PI, false);
   this._isEmpty = false;
+};
+
+// Debug
+SignaturePad.prototype.drawDataAsPoints = function (size, fill) {
+  var ctx = this._ctx;
+  ctx.save();
+
+  var length = this._data.length;
+  var i = void 0;
+  var j = void 0;
+  var x = void 0;
+  var y = void 0;
+
+  if (length) {
+    for (i = 0; i < length; i += 1) {
+      for (j = 0; j < this._data[i].length; j += 1) {
+        var point = this._data[i][j];
+        x = point.x;
+        y = point.y;
+        ctx.moveTo(x, y);
+        ctx.arc(x, y, size || 5, 0, 2 * Math.PI, false);
+        ctx.fillStyle = fill || 'rgba(255, 0, 0, 0.2)';
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.restore();
+};
+
+SignaturePad.prototype._drawMark = function (x, y, size, fill) {
+  var ctx = this._ctx;
+  ctx.save();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, size || 5, 0, 2 * Math.PI, false);
+  ctx.fillStyle = fill || 'rgba(255, 0, 0, 0.2)';
+  ctx.fill();
+  ctx.restore();
 };
 
 SignaturePad.prototype._drawCurve = function (curve, startWidth, endWidth) {

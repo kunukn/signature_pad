@@ -1,5 +1,6 @@
 var wrapper = document.getElementById("signature-pad"),
     clearButton = wrapper.querySelector("[data-action=clear]"),
+    debugPointsButton = wrapper.querySelector("[data-action=debug-points]"),
     savePNGButton = wrapper.querySelector("[data-action=save-png]"),
     saveSVGButton = wrapper.querySelector("[data-action=save-svg]"),
     canvas = wrapper.querySelector("canvas"),
@@ -27,6 +28,10 @@ signaturePad = new SignaturePad(canvas, {
 
 clearButton.addEventListener("click", function (event) {
     signaturePad.clear();
+});
+
+debugPointsButton.addEventListener("click", function (event) {
+    signaturePad.drawDataAsPoints();
 });
 
 savePNGButton.addEventListener("click", function (event) {
