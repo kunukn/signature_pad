@@ -72,6 +72,7 @@ Bezier.prototype._point = function (t, start, c1, c2, end) {
 };
 
 var log = console.log.bind(console);
+log = function nop(){};
 
 function SignaturePad(canvas, options) {
   var self = this;
@@ -223,16 +224,17 @@ SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   var y = event.clientY;
 
   var diff;
+  var now = Date.now(); // milliseconds
   if (isStrokeMove && this.throttle) {
     // are we are throttling ?
-    diff = event.timeStamp - this.lastUpdateTimeStamp;
+    diff = now - this.lastUpdateTimeStamp;
     if (diff <= this.throttle) {
       log('point skipped: ' + x + ' ' + y);
       return; // skip this update
     }
   }
   log('point used: ' + x + ' ' + y);
-  this.lastUpdateTimeStamp = event.timeStamp; // update
+  this.lastUpdateTimeStamp = now; // update
 
   var point = this._createPoint(x, y);
 
