@@ -1,4 +1,8 @@
 ## Changelog
+
+### 1.6.0-beta.1-throttling
+* Added throttle configuration. Throttle reduces point sampling rate by using Date.now() to remember last used stroke move event
+
 ### 1.6.0-beta.1
 * Added support for returning signature as SVG using `#fromDataURL('image/svg+xml')`. [jackspirou](https://github.com/jackspirou) [mymattcarroll](https://github.com/mymattcarroll) [szimek](https://github.com/szimek)
 * Added `#toData` method that returns data points.
