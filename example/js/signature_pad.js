@@ -22,6 +22,8 @@
 	(global.SignaturePad = factory());
 }(this, (function () { 'use strict';
 
+var log = console.log.bind(console);
+
 function Point(x, y, time) {
   this.x = x;
   this.y = y;
@@ -78,6 +80,7 @@ function SignaturePad(canvas, options) {
   this.velocityFilterWeight = opts.velocityFilterWeight || 0.7;
   this.minWidth = opts.minWidth || 0.5;
   this.maxWidth = opts.maxWidth || 2.5;
+  this.throttle = opts.throttle || 0;
   this.dotSize = opts.dotSize || function () {
     return (this.minWidth + this.maxWidth) / 2;
   };
@@ -85,6 +88,7 @@ function SignaturePad(canvas, options) {
   this.backgroundColor = opts.backgroundColor || 'rgba(0,0,0,0)';
   this.onBegin = opts.onBegin;
   this.onEnd = opts.onEnd;
+  this.lastUpdateTimeStamp = null;
 
   this._canvas = canvas;
   this._ctx = canvas.getContext('2d');
@@ -101,7 +105,7 @@ function SignaturePad(canvas, options) {
 
   this._handleMouseMove = function (event) {
     if (self._mouseButtonDown) {
-      self._strokeUpdate(event);
+      self._strokeUpdate(event, true);
     }
   };
 
@@ -124,7 +128,7 @@ function SignaturePad(canvas, options) {
     event.preventDefault();
 
     var touch = event.targetTouches[0];
-    self._strokeUpdate(touch);
+    self._strokeUpdate(touch, true);
   };
 
   this._handleTouchEnd = function (event) {
@@ -205,6 +209,7 @@ SignaturePad.prototype.isEmpty = function () {
 
 // Private methods
 SignaturePad.prototype._strokeBegin = function (event) {
+
   this._data.push([]);
   this._reset();
   this._strokeUpdate(event);
@@ -214,9 +219,18 @@ SignaturePad.prototype._strokeBegin = function (event) {
   }
 };
 
-SignaturePad.prototype._strokeUpdate = function (event) {
+SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
   var x = event.clientX;
   var y = event.clientY;
+
+  var diff;
+  if(isStrokeMove && this.throttle){ // if we are throttling
+    diff = event.timeStamp - this.lastUpdateTimeStamp;
+    if(diff <= this.throttle){
+      return;
+    }
+  }
+  this.lastUpdateTimeStamp = event.timeStamp; // update
 
   var point = this._createPoint(x, y);
 

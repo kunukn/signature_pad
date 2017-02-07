@@ -21,7 +21,9 @@ function resizeCanvas() {
 window.onresize = resizeCanvas;
 resizeCanvas();
 
-signaturePad = new SignaturePad(canvas);
+signaturePad = new SignaturePad(canvas, {
+  throttle: 16
+});
 
 clearButton.addEventListener("click", function (event) {
     signaturePad.clear();
