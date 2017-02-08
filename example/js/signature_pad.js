@@ -71,9 +71,40 @@ Bezier.prototype._point = function (t, start, c1, c2, end) {
   return start * (1.0 - t) * (1.0 - t) * (1.0 - t) + 3.0 * c1 * (1.0 - t) * (1.0 - t) * t + 3.0 * c2 * (1.0 - t) * t * t + end * t * t * t;
 };
 
-/* eslint no-console: ["error", { allow: ["debug", "warn", "log", "error"] }] */
-var log = console.log.bind(console);
-log = function nop() {};
+/* eslint-disable */
+
+// http://stackoverflow.com/a/27078401/815507
+function throttle(func, wait, options) {
+  var context, args, result;
+  var timeout = null;
+  var previous = 0;
+  if (!options) options = {};
+  var later = function later() {
+    previous = options.leading === false ? 0 : Date.now();
+    timeout = null;
+    result = func.apply(context, args);
+    if (!timeout) context = args = null;
+  };
+  return function () {
+    var now = Date.now();
+    if (!previous && options.leading === false) previous = now;
+    var remaining = wait - (now - previous);
+    context = this;
+    args = arguments;
+    if (remaining <= 0 || remaining > wait) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      previous = now;
+      result = func.apply(context, args);
+      if (!timeout) context = args = null;
+    } else if (!timeout && options.trailing !== false) {
+      timeout = setTimeout(later, remaining);
+    }
+    return result;
+  };
+}
 
 function SignaturePad(canvas, options) {
   var self = this;
@@ -83,9 +114,17 @@ function SignaturePad(canvas, options) {
   this.minWidth = opts.minWidth || 0.5;
   this.maxWidth = opts.maxWidth || 2.5;
   this.throttle = opts.throttle || 0;
+
+  if (this.throttle) {
+    this._strokeMoveUpdate = throttle(SignaturePad.prototype._strokeUpdate, this.throttle);
+  } else {
+    this._strokeMoveUpdate = SignaturePad.prototype._strokeUpdate;
+  }
+
   this.dotSize = opts.dotSize || function () {
     return (this.minWidth + this.maxWidth) / 2;
   };
+
   this.penColor = opts.penColor || 'black';
   this.backgroundColor = opts.backgroundColor || 'rgba(0,0,0,0)';
   this.onBegin = opts.onBegin;
@@ -107,7 +146,7 @@ function SignaturePad(canvas, options) {
 
   this._handleMouseMove = function (event) {
     if (self._mouseButtonDown) {
-      self._strokeUpdate(event, true);
+      self._strokeMoveUpdate(event, true);
     }
   };
 
@@ -130,7 +169,7 @@ function SignaturePad(canvas, options) {
     event.preventDefault();
 
     var touch = event.targetTouches[0];
-    self._strokeUpdate(touch, true);
+    self._strokeMoveUpdate(touch, true);
   };
 
   this._handleTouchEnd = function (event) {
@@ -220,20 +259,9 @@ SignaturePad.prototype._strokeBegin = function (event) {
   }
 };
 
-SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
+SignaturePad.prototype._strokeUpdate = function (event) {
   var x = event.clientX;
   var y = event.clientY;
-  var now = Date.now(); // milliseconds
-  if (isStrokeMove && this.throttle) {
-    // are we throttling ?
-    var diff = now - this.lastUpdateTimeStamp;
-    if (diff <= this.throttle) {
-      log('point skipped: ' + x + ' ' + y);
-      return; // skip this update
-    }
-  }
-  log('point used: ' + x + ' ' + y);
-  this.lastUpdateTimeStamp = now; // update
 
   var point = this._createPoint(x, y);
 

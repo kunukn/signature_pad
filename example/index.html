@@ -12,18 +12,6 @@
 
   <link rel="stylesheet" href="css/signature-pad.css">
 
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-39365077-1']);
-    _gaq.push(['_trackPageview']);
-    (function() {
-      return; // disabled
-
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-  </script>
 </head>
 <body onselectstart="return false">
   <a id="github" href="https://github.com/szimek/signature_pad">
@@ -39,7 +27,7 @@
       <div class="description">Sign above</div>
       <div class="left">
         <button type="button" class="button clear" data-action="clear">Clear</button>
-        <button type="button" class="button clear" data-action="debug-points">Draw points</button>
+        <button type="button" class="button debug" data-action="debug-points">Draw points</button>
       </div>
       <div class="right">
         <button type="button" class="button save" data-action="save-png">Save as PNG</button>

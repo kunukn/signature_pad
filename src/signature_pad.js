@@ -1,9 +1,6 @@
 import Point from './point';
 import Bezier from './bezier';
-
-/* eslint no-console: ["error", { allow: ["debug", "warn", "log", "error"] }] */
-let log = console.log.bind(console);
-log = function nop() { };
+import throttle from './throttle';
 
 function SignaturePad(canvas, options) {
   const self = this;
@@ -13,9 +10,17 @@ function SignaturePad(canvas, options) {
   this.minWidth = opts.minWidth || 0.5;
   this.maxWidth = opts.maxWidth || 2.5;
   this.throttle = opts.throttle || 0;
+
+  if (this.throttle) {
+    this._strokeMoveUpdate = throttle(SignaturePad.prototype._strokeUpdate, this.throttle);
+  } else {
+    this._strokeMoveUpdate = SignaturePad.prototype._strokeUpdate;
+  }
+
   this.dotSize = opts.dotSize || function () {
     return (this.minWidth + this.maxWidth) / 2;
   };
+
   this.penColor = opts.penColor || 'black';
   this.backgroundColor = opts.backgroundColor || 'rgba(0,0,0,0)';
   this.onBegin = opts.onBegin;
@@ -37,7 +42,7 @@ function SignaturePad(canvas, options) {
 
   this._handleMouseMove = function (event) {
     if (self._mouseButtonDown) {
-      self._strokeUpdate(event, true);
+      self._strokeMoveUpdate(event, true);
     }
   };
 
@@ -60,7 +65,7 @@ function SignaturePad(canvas, options) {
     event.preventDefault();
 
     const touch = event.targetTouches[0];
-    self._strokeUpdate(touch, true);
+    self._strokeMoveUpdate(touch, true);
   };
 
   this._handleTouchEnd = function (event) {
@@ -142,19 +147,9 @@ SignaturePad.prototype._strokeBegin = function (event) {
   }
 };
 
-SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
+SignaturePad.prototype._strokeUpdate = function (event) {
   const x = event.clientX;
   const y = event.clientY;
-  const now = Date.now(); // milliseconds
-  if (isStrokeMove && this.throttle) { // are we throttling ?
-    const diff = now - this.lastUpdateTimeStamp;
-    if (diff <= this.throttle) {
-      log(`point skipped: ${x} ${y}`);
-      return; // skip this update
-    }
-  }
-  log(`point used: ${x} ${y}`);
-  this.lastUpdateTimeStamp = now; // update
 
   const point = this._createPoint(x, y);
   const { curve, widths } = this._addPoint(point);
@@ -169,6 +164,7 @@ SignaturePad.prototype._strokeUpdate = function (event, isStrokeMove) {
     time: point.time,
   });
 };
+
 
 SignaturePad.prototype._strokeEnd = function (event) {
   const canDrawCurve = this.points.length > 2;
